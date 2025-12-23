@@ -30,10 +30,14 @@ def get_video_info():
         return jsonify({'error': 'URL tidak boleh kosong'}), 400
 
     ydl_opts = {
-        'format': 'best[ext=mp4]/best',
+        # Prefer progressive MP4 with widely supported codecs (avoid AV1 when possible)
+        'format': 'best[ext=mp4][vcodec!=av01][acodec!=none][vcodec!=none]/best[ext=mp4][acodec!=none][vcodec!=none]/best',
         'noplaylist': True,
         'quiet': True,
         'no_warnings': True,
+        'http_headers': {
+            'User-Agent': 'Mozilla/5.0',
+        },
     }
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -61,10 +65,14 @@ def api_download():
         return "URL tidak boleh kosong", 400
 
     ydl_opts = {
-        'format': 'best[ext=mp4]/best',
+        # Prefer progressive MP4 with widely supported codecs (avoid AV1 when possible)
+        'format': 'best[ext=mp4][vcodec!=av01][acodec!=none][vcodec!=none]/best[ext=mp4][acodec!=none][vcodec!=none]/best',
         'noplaylist': True,
         'quiet': True,
         'no_warnings': True,
+        'http_headers': {
+            'User-Agent': 'Mozilla/5.0',
+        },
     }
 
     try:
@@ -80,18 +88,25 @@ def api_download():
 
         headers = {
             'User-Agent': 'Mozilla/5.0',
+            'Accept-Encoding': 'identity',
         }
         req = requests.get(file_url, stream=True, headers=headers, timeout=30)
         req.raise_for_status()
 
         content_type = req.headers.get('content-type') or 'application/octet-stream'
+        content_length = req.headers.get('content-length')
+
+        response_headers = {
+            'Content-Disposition': f'attachment; filename="{title}.{ext}"',
+            'X-File-Ext': ext,
+        }
+        if content_length:
+            response_headers['Content-Length'] = content_length
 
         return Response(
             stream_with_context(req.iter_content(chunk_size=1024 * 256)),
             content_type=content_type,
-            headers={
-                'Content-Disposition': f'attachment; filename="{title}.{ext}"'
-            }
+            headers=response_headers,
         )
     except Exception as e:
         return f"Error: {e}", 500

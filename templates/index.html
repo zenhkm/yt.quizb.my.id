@@ -106,6 +106,21 @@
 </div>
 
 <script>
+function getFilenameFromContentDisposition(contentDisposition) {
+    if (!contentDisposition) return null;
+
+    // RFC 5987: filename*=UTF-8''...
+    const matchStar = contentDisposition.match(/filename\*=(?:UTF-8'')?([^;]+)/i);
+    if (matchStar && matchStar[1]) {
+        const value = matchStar[1].trim().replace(/^"|"$/g, '');
+        try { return decodeURIComponent(value); } catch { return value; }
+    }
+
+    const match = contentDisposition.match(/filename=([^;]+)/i);
+    if (match && match[1]) return match[1].trim().replace(/^"|"$/g, '');
+    return null;
+}
+
 async function downloadVideo() {
     const urlInput = document.getElementById('urlInput');
     const btn = document.getElementById('btnSubmit');
@@ -134,17 +149,27 @@ async function downloadVideo() {
             body: JSON.stringify({ url })
         });
 
+        const contentType = (res.headers.get('content-type') || '').toLowerCase();
         if (!res.ok) {
             const text = await res.text();
-            throw new Error(text);
+            throw new Error(text || `HTTP ${res.status}`);
         }
+
+        // If server returned an error page/text, don't save it as a video
+        if (contentType.includes('text/') || contentType.includes('application/json')) {
+            const text = await res.text();
+            throw new Error(text || 'Server mengembalikan respons non-video');
+        }
+
+        const cd = res.headers.get('content-disposition') || '';
+        const filename = getFilenameFromContentDisposition(cd) || 'video';
 
         const blob = await res.blob();
         const downloadUrl = URL.createObjectURL(blob);
 
         const a = document.createElement('a');
         a.href = downloadUrl;
-        a.download = 'video.mp4';
+        a.download = filename;
         document.body.appendChild(a);
         a.click();
 
