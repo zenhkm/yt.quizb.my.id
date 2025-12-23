@@ -6,6 +6,7 @@ import re
 import os
 import shutil
 import tempfile
+from typing import Optional, Dict, Any
 
 app = Flask(__name__)
 CORS(app)
@@ -21,9 +22,9 @@ def _safe_filename(name: str, fallback: str = "video") -> str:
     return name[:150] if len(name) > 150 else name
 
 
-def _pick_direct_mp4_format(info: dict) -> dict | None:
+def _pick_direct_mp4_format(info: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     formats = info.get('formats') or []
-    candidates: list[dict] = []
+    candidates: list[Dict[str, Any]] = []
 
     for f in formats:
         url = f.get('url')
@@ -53,7 +54,7 @@ def _pick_direct_mp4_format(info: dict) -> dict | None:
     if not candidates:
         return None
 
-    def score(f: dict) -> tuple:
+    def score(f: Dict[str, Any]) -> tuple:
         vcodec = (f.get('vcodec') or '').lower()
         acodec = (f.get('acodec') or '').lower()
         prefer_avc = 1 if vcodec.startswith('avc1') else 0
