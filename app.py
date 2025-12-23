@@ -230,6 +230,31 @@ def api_download():
         try:
             req = requests.get(file_url, stream=True, headers=headers, timeout=15)
             req.raise_for_status()
+        except requests.HTTPError as http_err:
+            status = getattr(http_err.response, 'status_code', None)
+            if status in (401, 403):
+                # Fallback: let yt-dlp do the download (handles YouTube quirks better)
+                try:
+                    tmpdir = tempfile.mkdtemp(prefix='ytdlp_')
+
+                    @after_this_request
+                    def _cleanup(response):
+                        shutil.rmtree(tmpdir, ignore_errors=True)
+                        return response
+
+                    ffmpeg_path = _has_usable_ffmpeg()
+                    # Use original YouTube URL for fresh signature generation
+                    file_path = _download_with_ytdlp(url, tmpdir, ffmpeg_path)
+                    
+                    if not os.path.exists(file_path):
+                        return jsonify({'error': 'Fallback download gagal: File tidak ditemukan'}), 502
+
+                    download_name = os.path.basename(file_path)
+                    guessed_mime = 'video/mp4' if download_name.lower().endswith('.mp4') else 'application/octet-stream'
+                    return send_file(file_path, as_attachment=True, download_name=download_name, mimetype=guessed_mime)
+                except Exception as fallback_err:
+                    return jsonify({'error': f'Gagal mengakses video (403) dan fallback gagal: {str(fallback_err)}'}), 502
+            raise http_err
         except Exception as e:
             return jsonify({'error': f'Gagal mengakses video: {str(e)}'}), 502
 
