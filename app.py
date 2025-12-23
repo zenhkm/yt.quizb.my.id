@@ -205,20 +205,27 @@ def api_download():
         if not file_url:
             return jsonify({'error': 'Gagal mendapatkan URL stream'}), 500
 
-        # Use headers that yt-dlp expects for the chosen format (helps avoid 403)
-        format_headers = {}
+        # Use comprehensive headers to avoid 403 (YouTube is picky about headers)
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': '*/*',
+            'Accept-Language': 'en-US,en;q=0.9',
+            'Accept-Encoding': 'identity',
+            'Referer': 'https://www.youtube.com/',
+            'Origin': 'https://www.youtube.com',
+            'Sec-Fetch-Dest': 'video',
+            'Sec-Fetch-Mode': 'no-cors',
+            'Sec-Fetch-Site': 'cross-site',
+            'Range': 'bytes=0-',
+        }
+        
+        # Override with any specific headers from yt-dlp if available
         if picked and isinstance(picked, dict):
             format_headers = picked.get('http_headers') or {}
-        if not format_headers:
+            headers.update(format_headers)
+        elif info:
             format_headers = info.get('http_headers') or {}
-
-        headers = {
-            **format_headers,
-            'User-Agent': format_headers.get('User-Agent') or 'Mozilla/5.0',
-            'Referer': format_headers.get('Referer') or 'https://www.youtube.com/',
-            'Origin': format_headers.get('Origin') or 'https://www.youtube.com',
-            'Accept-Encoding': 'identity',
-        }
+            headers.update(format_headers)
 
         try:
             req = requests.get(file_url, stream=True, headers=headers, timeout=15)
