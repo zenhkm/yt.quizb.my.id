@@ -6,9 +6,56 @@ import re
 import os
 import shutil
 import tempfile
+import time
 
 app = Flask(__name__)
 CORS(app)
+
+# Enhanced yt-dlp options to bypass 403 errors
+def get_ydl_opts(download=False, tmpdir=None, ffmpeg_path=None):
+    """Get enhanced yt-dlp options with anti-403 measures."""
+    opts = {
+        'quiet': True,
+        'no_warnings': True,
+        'noplaylist': True,
+        'socket_timeout': 30,
+        'retries': 10,
+        'fragment_retries': 10,
+        'skip_unavailable_fragments': True,
+        'ignoreerrors': False,
+        'nocheckcertificate': True,
+        'age_limit': None,
+        'extractor_retries': 3,
+        'http_headers': {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:122.0) Gecko/20100101 Firefox/122.0',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'Accept-Language': 'en-us,en;q=0.5',
+            'Accept-Encoding': 'gzip,deflate',
+            'Accept-Charset': 'ISO-8859-1,utf-8;q=0.7,*;q=0.7',
+            'Connection': 'keep-alive',
+        },
+        'cookiesfrombrowser': None,
+    }
+    
+    if download and tmpdir and ffmpeg_path:
+        opts.update({
+            'format': (
+                'bestvideo[ext=mp4][height<=1080]+bestaudio[ext=m4a]/'
+                'bestvideo[ext=mp4]+bestaudio[ext=m4a]/'
+                'best[ext=mp4][height<=1080]/'
+                'best[ext=mp4]/'
+                'best'
+            ),
+            'outtmpl': os.path.join(tmpdir, '%(title).150s.%(ext)s'),
+            'merge_output_format': 'mp4',
+            'ffmpeg_location': ffmpeg_path,
+            'postprocessors': [{
+                'key': 'FFmpegVideoConvertor',
+                'preferedformat': 'mp4',
+            }],
+        })
+    
+    return opts
 
 
 def _safe_filename(name: str, fallback: str = "video") -> str:
@@ -59,11 +106,7 @@ def get_video_info():
         return jsonify({'error': 'URL tidak boleh kosong'}), 400
 
     try:
-        ydl_opts = {
-            'quiet': True,
-            'no_warnings': True,
-            'noplaylist': True,
-        }
+        ydl_opts = get_ydl_opts(download=False)
         
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=False)
@@ -72,14 +115,19 @@ def get_video_info():
                 'title': info.get('title', 'Unknown'),
                 'thumbnail': info.get('thumbnail'),
                 'duration': info.get('duration_string') or str(info.get('duration', 0)),
+                'uploader': info.get('uploader', ''),
+                'view_count': info.get('view_count', 0),
             })
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        error_msg = str(e)
+        if '403' in error_msg or 'Forbidden' in error_msg:
+            error_msg = 'Video tidak dapat diakses (403). Pastikan URL valid dan video tersedia.'
+        return jsonify({'error': error_msg}), 500
 
 
 @app.route('/api/download', methods=['POST'])
 def api_download():
-    """Download video using yt-dlp with ffmpeg merge."""
+    """Download video using yt-dlp with enhanced 403 bypass."""
     data = request.get_json(silent=True) or {}
     url = data.get('url', '').strip()
 
@@ -95,56 +143,79 @@ def api_download():
         # Create temp directory for download
         tmpdir = tempfile.mkdtemp(prefix='ytdlp_')
 
-        # yt-dlp options: prefer H.264+AAC MP4
-        ydl_opts = {
-            'format': (
-                'bestvideo[ext=mp4][vcodec^=avc1]+bestaudio[ext=m4a][acodec^=mp4a]'
-                '/bestvideo[ext=mp4][vcodec^=avc1]+bestaudio[ext=m4a]'
-                '/best[ext=mp4][vcodec^=avc1][acodec!=none][vcodec!=none]'
-                '/best[ext=mp4]'
-                '/best'
-            ),
-            'outtmpl': os.path.join(tmpdir, '%(title).150s.%(ext)s'),
-            'merge_output_format': 'mp4',
-            'ffmpeg_location': ffmpeg_path,
-            'quiet': False,
-            'no_warnings': True,
-            'noplaylist': True,
-            'socket_timeout': 30,
-            'http_headers': {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-            },
+        # Get enhanced options
+        ydl_opts = get_ydl_opts(download=True, tmpdir=tmpdir, ffmpeg_path=ffmpeg_path)
+        
+        # Add additional bypass options for stubborn 403s
+        ydl_opts['extractor_args'] = {
+            'youtube': {
+                'player_client': ['android', 'web'],
+                'player_skip': ['configs', 'webpage']
+            }
         }
 
-        # Download and merge
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(url, download=True)
-            filename = ydl.prepare_filename(info)
+        # Download with retry logic
+        max_retries = 3
+        last_error = None
+        
+        for attempt in range(max_retries):
+            try:
+                with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                    info = ydl.extract_info(url, download=True)
+                    filename = ydl.prepare_filename(info)
+                
+                # If prepare_filename gave us intermediate file, find the merged MP4
+                if not os.path.exists(filename):
+                    base, _ = os.path.splitext(filename)
+                    mp4_file = base + '.mp4'
+                    if os.path.exists(mp4_file):
+                        filename = mp4_file
+                    else:
+                        # Find any mp4 file in tmpdir
+                        for f in os.listdir(tmpdir):
+                            if f.endswith('.mp4'):
+                                filename = os.path.join(tmpdir, f)
+                                break
+                
+                if os.path.exists(filename):
+                    # Success! Send file
+                    @after_this_request
+                    def cleanup(response):
+                        if tmpdir and os.path.exists(tmpdir):
+                            shutil.rmtree(tmpdir, ignore_errors=True)
+                        return response
 
-        # If prepare_filename gave us intermediate file, find the merged MP4
-        if not os.path.exists(filename):
-            base, _ = os.path.splitext(filename)
-            mp4_file = base + '.mp4'
-            if os.path.exists(mp4_file):
-                filename = mp4_file
+                    basename = os.path.basename(filename)
+                    return send_file(
+                        filename,
+                        as_attachment=True,
+                        download_name=basename,
+                        mimetype='video/mp4'
+                    )
+                else:
+                    last_error = 'File tidak ditemukan setelah download'
+                    
+            except Exception as e:
+                last_error = str(e)
+                if attempt < max_retries - 1:
+                    time.sleep(2 ** attempt)  # Exponential backoff
+                    continue
+                break
 
-        if not os.path.exists(filename):
-            return jsonify({'error': 'Download selesai tapi file tidak ditemukan'}), 500
-
-        # Send file to client
-        @after_this_request
-        def cleanup(response):
-            if tmpdir and os.path.exists(tmpdir):
-                shutil.rmtree(tmpdir, ignore_errors=True)
-            return response
-
-        basename = os.path.basename(filename)
-        return send_file(
-            filename,
-            as_attachment=True,
-            download_name=basename,
-            mimetype='video/mp4'
-        )
+        # If we get here, all retries failed
+        if tmpdir and os.path.exists(tmpdir):
+            shutil.rmtree(tmpdir, ignore_errors=True)
+        
+        if '403' in str(last_error) or 'Forbidden' in str(last_error):
+            return jsonify({
+                'error': '⚠️ Video diblokir oleh YouTube (403).\n\n'
+                         'Solusi:\n'
+                         '1. Coba lagi dalam beberapa menit\n'
+                         '2. Update yt-dlp: pip install -U yt-dlp\n'
+                         '3. Gunakan yt-dlp lokal di komputer Anda'
+            }), 403
+        
+        return jsonify({'error': f'Download gagal: {last_error}'}), 500
 
     except Exception as e:
         # Clean up on error
@@ -153,7 +224,7 @@ def api_download():
         
         error_msg = str(e)
         if '403' in error_msg or 'Forbidden' in error_msg:
-            error_msg = 'Video tidak dapat diakses (403). Coba lagi atau gunakan yt-dlp lokal.'
+            error_msg = '⚠️ Video tidak dapat diakses (403). Update yt-dlp atau coba lagi nanti.'
         
         return jsonify({'error': error_msg}), 500
 

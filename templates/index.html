@@ -103,6 +103,22 @@
             color: #33c;
             border: 1px solid #ccf;
         }
+        .message.warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeeba;
+        }
+        .retry-info {
+            margin-top: 10px;
+            font-size: 12px;
+            color: #666;
+        }
+        .version-info {
+            margin-top: 20px;
+            text-align: center;
+            font-size: 12px;
+            color: #999;
+        }
     </style>
 </head>
 <body>
@@ -116,6 +132,7 @@
 
         <div class="spinner" id="spinner"></div>
         <div class="message" id="message"></div>
+        <div class="version-info">Enhanced with 403 Bypass · yt-dlp 2024</div>
     </div>
 
     <script>
@@ -136,7 +153,7 @@
             message.style.display = 'none';
 
             try {
-                showMessage('Sedang mendownload... mohon tunggu...', 'info');
+                showMessage('🔄 Mendownload video... (Auto-retry jika error)', 'info');
 
                 const res = await fetch('/api/download', {
                     method: 'POST',
@@ -154,6 +171,12 @@
                     } else {
                         errorMsg = await res.text();
                     }
+                    
+                    // Handle 403 errors with more context
+                    if (res.status === 403) {
+                        errorMsg = errorMsg + '\n\nTips: Tunggu beberapa menit lalu coba lagi, atau update yt-dlp di server.';
+                    }
+                    
                     throw new Error(errorMsg);
                 }
 
