@@ -66,7 +66,7 @@ def _pick_direct_mp4_format(info: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     return sorted(candidates, key=score, reverse=True)[0]
 
 
-def _has_usable_ffmpeg() -> str | None:
+def _has_usable_ffmpeg() -> Optional[str]:
     env_path = os.environ.get('FFMPEG_LOCATION')
     if env_path and os.path.exists(env_path):
         return env_path
