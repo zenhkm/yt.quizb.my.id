@@ -30,8 +30,14 @@ def get_video_info():
         return jsonify({'error': 'URL tidak boleh kosong'}), 400
 
     ydl_opts = {
-        # Prefer progressive MP4 with widely supported codecs (avoid AV1 when possible)
-        'format': 'best[ext=mp4][vcodec!=av01][acodec!=none][vcodec!=none]/best[ext=mp4][acodec!=none][vcodec!=none]/best',
+        # Windows-friendly: prefer H.264 (avc1) + AAC (mp4a) in MP4 container.
+        # If unavailable, fall back to any MP4 with audio+video, then best.
+        'format': (
+            'best[ext=mp4][vcodec^=avc1][acodec^=mp4a][acodec!=none][vcodec!=none]'
+            '/best[ext=mp4][vcodec^=avc1][acodec!=none][vcodec!=none]'
+            '/best[ext=mp4][acodec!=none][vcodec!=none]'
+            '/best'
+        ),
         'noplaylist': True,
         'quiet': True,
         'no_warnings': True,
@@ -65,8 +71,14 @@ def api_download():
         return "URL tidak boleh kosong", 400
 
     ydl_opts = {
-        # Prefer progressive MP4 with widely supported codecs (avoid AV1 when possible)
-        'format': 'best[ext=mp4][vcodec!=av01][acodec!=none][vcodec!=none]/best[ext=mp4][acodec!=none][vcodec!=none]/best',
+        # Windows-friendly: prefer H.264 (avc1) + AAC (mp4a) in MP4 container.
+        # If unavailable, fall back to any MP4 with audio+video, then best.
+        'format': (
+            'best[ext=mp4][vcodec^=avc1][acodec^=mp4a][acodec!=none][vcodec!=none]'
+            '/best[ext=mp4][vcodec^=avc1][acodec!=none][vcodec!=none]'
+            '/best[ext=mp4][acodec!=none][vcodec!=none]'
+            '/best'
+        ),
         'noplaylist': True,
         'quiet': True,
         'no_warnings': True,
@@ -85,6 +97,9 @@ def api_download():
 
         title = _safe_filename(info.get('title') or 'video')
         ext = (info.get('ext') or 'mp4').strip('.')
+        vcodec = (info.get('vcodec') or '').strip()
+        acodec = (info.get('acodec') or '').strip()
+        format_id = (info.get('format_id') or '').strip()
 
         headers = {
             'User-Agent': 'Mozilla/5.0',
@@ -96,15 +111,40 @@ def api_download():
         content_type = req.headers.get('content-type') or 'application/octet-stream'
         content_length = req.headers.get('content-length')
 
+        # Peek first chunk to avoid saving HTML/playlist as .mp4
+        content_iter = req.iter_content(chunk_size=1024 * 256)
+        first_chunk = next(content_iter, b'')
+        if not first_chunk:
+            return "Upstream mengembalikan data kosong", 502
+
+        sniff = first_chunk[:64].lstrip()
+        if sniff.startswith(b'<!doctype') or sniff.startswith(b'<!DOCTYPE') or sniff.startswith(b'<html'):
+            return "Upstream mengembalikan HTML (bukan file video)", 502
+
+        # MP4 typically contains 'ftyp' early; WebM starts with EBML header.
+        if ext.lower() == 'mp4' and b'ftyp' not in first_chunk[:4096]:
+            if first_chunk.startswith(b'\x1a\x45\xdf\xa3'):
+                ext = 'webm'
+                content_type = 'video/webm'
+
         response_headers = {
             'Content-Disposition': f'attachment; filename="{title}.{ext}"',
             'X-File-Ext': ext,
+            'X-VCodec': vcodec,
+            'X-ACodec': acodec,
+            'X-Format-Id': format_id,
         }
         if content_length:
             response_headers['Content-Length'] = content_length
 
+        def generate():
+            yield first_chunk
+            for chunk in content_iter:
+                if chunk:
+                    yield chunk
+
         return Response(
-            stream_with_context(req.iter_content(chunk_size=1024 * 256)),
+            stream_with_context(generate()),
             content_type=content_type,
             headers=response_headers,
         )
