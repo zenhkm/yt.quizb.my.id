@@ -1,4 +1,5 @@
 from flask import Flask, render_template, request, jsonify, Response, stream_with_context, send_file, after_this_request
+from flask import redirect
 from flask_cors import CORS
 import yt_dlp
 import requests  # Import library baru ini
@@ -194,6 +195,8 @@ def api_download():
             vcodec = (picked.get('vcodec') or '').strip()
             acodec = (picked.get('acodec') or '').strip()
             format_id = (picked.get('format_id') or '').strip()
+            # Short-circuit: let the client download directly from Google to avoid server timeout.
+            return redirect(file_url, code=302)
         else:
             file_url = info.get('url')
             ext = (info.get('ext') or 'mp4').strip('.')
@@ -220,27 +223,12 @@ def api_download():
         }
 
         try:
-            req = requests.get(file_url, stream=True, headers=headers, timeout=30)
+            req = requests.get(file_url, stream=True, headers=headers, timeout=15)
             req.raise_for_status()
         except requests.HTTPError as http_err:
             status = getattr(http_err.response, 'status_code', None)
             if status in (401, 403):
-                # Fallback: let yt-dlp do the download (handles YouTube quirks better)
-                tmpdir = tempfile.mkdtemp(prefix='ytdlp_')
-
-                @after_this_request
-                def _cleanup(response):
-                    shutil.rmtree(tmpdir, ignore_errors=True)
-                    return response
-
-                ffmpeg_path = _has_usable_ffmpeg()
-                file_path = _download_with_ytdlp(url, tmpdir, ffmpeg_path)
-                if not os.path.exists(file_path):
-                    return f"Error: fallback download gagal (HTTP {status})", 502
-
-                download_name = os.path.basename(file_path)
-                guessed_mime = 'video/mp4' if download_name.lower().endswith('.mp4') else 'application/octet-stream'
-                return send_file(file_path, as_attachment=True, download_name=download_name, mimetype=guessed_mime)
+                return f"Error: sumber menolak akses (HTTP {status}). Coba ulang atau gunakan downloader lokal.", 502
             raise
 
         content_type = req.headers.get('content-type') or 'application/octet-stream'
@@ -258,8 +246,8 @@ def api_download():
 
         if sniff.startswith(b'#EXTM3U'):
             # This is an HLS manifest, not a media file.
-            # If no direct MP4 exists, we need yt-dlp download+merge.
-            picked = None
+            # HLS merge on shared hosting cenderung timeout; beri pesan jelas.
+            return "Sumber hanya menyediakan HLS (m3u8). Di hosting ini proses gabung akan timeout. Gunakan downloader lokal (yt-dlp/ffmpeg).", 502
 
         # MP4 typically contains 'ftyp' early; WebM starts with EBML header.
         if ext.lower() == 'mp4' and b'ftyp' not in first_chunk[:4096]:
@@ -287,25 +275,7 @@ def api_download():
                     yield chunk
 
         # If we detected HLS manifest, use fallback downloader if possible.
-        if sniff.startswith(b'#EXTM3U'):
-            ffmpeg_path = _has_usable_ffmpeg()
-            if not ffmpeg_path:
-                return "Sumber video hanya menyediakan stream HLS (m3u8). Server butuh ffmpeg untuk menggabungkan jadi MP4.", 502
-
-            tmpdir = tempfile.mkdtemp(prefix='ytdlp_')
-
-            @after_this_request
-            def _cleanup(response):
-                shutil.rmtree(tmpdir, ignore_errors=True)
-                return response
-
-            file_path = _download_with_ytdlp(url, tmpdir, ffmpeg_path)
-            if not os.path.exists(file_path):
-                return "Gagal membuat file hasil download di server", 500
-
-            download_name = os.path.basename(file_path)
-            guessed_mime = 'video/mp4' if download_name.lower().endswith('.mp4') else 'application/octet-stream'
-            return send_file(file_path, as_attachment=True, download_name=download_name, mimetype=guessed_mime)
+        # (No HLS fallback here to avoid timeout on shared hosting.)
 
         return Response(
             stream_with_context(generate()),
