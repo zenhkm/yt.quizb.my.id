@@ -1,13 +1,38 @@
 # 🎥 YouTube Downloader - Enhanced Version
 
-YouTube video downloader dengan fitur anti-403 bypass yang ditingkatkan.
+YouTube video downloader dengan fitur anti-403 bypass dan quality selection.
 
-## ✨ Fitur Baru
+## ✨ Fitur Utama
 
-- **Anti-403 Bypass**: Menggunakan multiple player clients (Android, Web)
-- **Auto Retry**: Otomatis retry 3x dengan exponential backoff
-- **Enhanced Headers**: User-agent dan headers yang lebih baik
-- **Better Error Messages**: Pesan error yang lebih informatif
+- **🎯 Quality Selection** - Pilih kualitas video sebelum download (NEW!)
+- **Anti-403 Bypass** - Menggunakan multiple player clients (Android, Web)
+- **Auto Retry** - Otomatis retry 3x dengan exponential backoff
+- **Enhanced Headers** - User-agent dan headers yang lebih baik
+- **Better Error Messages** - Pesan error yang lebih informatif
+- **Filesize Preview** - Lihat ukuran file sebelum download
+
+## 🎯 Cara Menggunakan
+
+1. **Paste URL YouTube** ke input field
+2. **Klik "Cek Video"** - Aplikasi akan fetch available qualities
+3. **Pilih Kualitas** yang diinginkan:
+   - Best Quality (Auto) - Kualitas terbaik otomatis
+   - 1080p - Full HD
+   - 720p - HD
+   - 480p - Standard Definition
+   - 360p - Mobile Quality
+4. **Klik "Download"** - Video akan didownload
+
+### Quality Selection
+```
+┌────────────────────────────────┐
+│  Best Quality    1080p   720p  │
+│   (Auto)        ~50MB   ~30MB  │
+├────────────────────────────────┤
+│   480p          360p           │
+│  ~15MB         ~10MB           │
+└────────────────────────────────┘
+```
 
 ## 🚀 Instalasi
 
@@ -81,11 +106,34 @@ Get info video tanpa download
 }
 ```
 
-### POST /api/download
-Download video
+### POST /api/formats (NEW!)
+Get available video qualities
 ```json
 {
   "url": "https://youtube.com/watch?v=..."
+}
+```
+
+Response:
+```json
+{
+  "formats": [
+    {
+      "quality": "1080p",
+      "height": 1080,
+      "filesize_mb": 50.0
+    }
+  ],
+  "title": "Video Title"
+}
+```
+
+### POST /api/download
+Download video dengan kualitas tertentu
+```json
+{
+  "url": "https://youtube.com/watch?v=...",
+  "quality": "720p"  // optional, default: "best"
 }
 ```
 

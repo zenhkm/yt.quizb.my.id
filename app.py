@@ -125,11 +125,70 @@ def get_video_info():
         return jsonify({'error': error_msg}), 500
 
 
+@app.route('/api/formats', methods=['POST'])
+def get_video_formats():
+    """Get available video formats/qualities."""
+    data = request.get_json(silent=True) or {}
+    url = data.get('url', '').strip()
+
+    if not url:
+        return jsonify({'error': 'URL tidak boleh kosong'}), 400
+
+    try:
+        ydl_opts = get_ydl_opts(download=False)
+        
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(url, download=False)
+            
+            # Extract unique video formats with audio
+            formats_dict = {}
+            
+            for f in info.get('formats', []):
+                # Only consider formats with video
+                if f.get('vcodec') != 'none' and f.get('height'):
+                    height = f.get('height')
+                    ext = f.get('ext', 'mp4')
+                    filesize = f.get('filesize') or f.get('filesize_approx') or 0
+                    
+                    # Create quality label
+                    quality = f"{height}p"
+                    
+                    # Keep highest bitrate for each resolution
+                    if quality not in formats_dict or filesize > formats_dict[quality].get('filesize', 0):
+                        formats_dict[quality] = {
+                            'quality': quality,
+                            'height': height,
+                            'ext': ext,
+                            'filesize': filesize,
+                            'filesize_mb': round(filesize / (1024 * 1024), 1) if filesize else None,
+                            'format_note': f.get('format_note', ''),
+                        }
+            
+            # Sort by resolution
+            formats_list = sorted(
+                formats_dict.values(),
+                key=lambda x: x['height'],
+                reverse=True
+            )
+            
+            return jsonify({
+                'formats': formats_list,
+                'title': info.get('title', 'Unknown'),
+            })
+            
+    except Exception as e:
+        error_msg = str(e)
+        if '403' in error_msg or 'Forbidden' in error_msg:
+            error_msg = 'Video tidak dapat diakses (403). Pastikan URL valid dan video tersedia.'
+        return jsonify({'error': error_msg}), 500
+
+
 @app.route('/api/download', methods=['POST'])
 def api_download():
     """Download video using yt-dlp with enhanced 403 bypass."""
     data = request.get_json(silent=True) or {}
     url = data.get('url', '').strip()
+    quality = data.get('quality', 'best')  # Get quality parameter
 
     if not url:
         return jsonify({'error': 'URL tidak boleh kosong'}), 400
@@ -145,6 +204,21 @@ def api_download():
 
         # Get enhanced options
         ydl_opts = get_ydl_opts(download=True, tmpdir=tmpdir, ffmpeg_path=ffmpeg_path)
+        
+        # Update format based on quality selection
+        if quality and quality != 'best':
+            # Extract resolution number (e.g., '720p' -> 720)
+            try:
+                height = int(quality.replace('p', ''))
+                ydl_opts['format'] = (
+                    f'bestvideo[height<={height}][ext=mp4]+bestaudio[ext=m4a]/'
+                    f'bestvideo[height<={height}]+bestaudio/'
+                    f'best[height<={height}][ext=mp4]/'
+                    f'best[height<={height}]/'
+                    f'best'
+                )
+            except ValueError:
+                pass  # Use default format if parsing fails
         
         # Add additional bypass options for stubborn 403s
         ydl_opts['extractor_args'] = {

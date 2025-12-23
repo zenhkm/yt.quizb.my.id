@@ -119,6 +119,67 @@
             font-size: 12px;
             color: #999;
         }
+        .quality-selector {
+            display: none;
+            margin: 20px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+        .quality-selector h3 {
+            margin-bottom: 15px;
+            color: #667eea;
+            font-size: 18px;
+        }
+        .quality-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+        }
+        .quality-option {
+            padding: 12px;
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.3s;
+        }
+        .quality-option:hover {
+            border-color: #667eea;
+            transform: translateY(-2px);
+        }
+        .quality-option.selected {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+        .quality-label {
+            font-weight: 600;
+            font-size: 16px;
+        }
+        .quality-size {
+            font-size: 12px;
+            color: #666;
+            margin-top: 4px;
+        }
+        .quality-option.selected .quality-size {
+            color: #fff;
+        }
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .btn-group button {
+            flex: 1;
+        }
+        .btn-secondary {
+            background: #6c757d;
+        }
+        .btn-secondary:hover:not(:disabled) {
+            background: #5a6268;
+        }
     </style>
 </head>
 <body>
@@ -127,20 +188,33 @@
         
         <div class="input-group">
             <input type="text" id="urlInput" placeholder="Paste YouTube URL here...">
-            <button id="btnDownload" onclick="startDownload()">Download</button>
+            <button id="btnCheck" onclick="checkVideo()">Cek Video</button>
+        </div>
+
+        <div class="quality-selector" id="qualitySelector">
+            <h3>📊 Pilih Kualitas Video</h3>
+            <div class="quality-options" id="qualityOptions"></div>
+            <div class="btn-group">
+                <button class="btn-secondary" onclick="cancelDownload()">Batal</button>
+                <button onclick="downloadVideo()">Download</button>
+            </div>
         </div>
 
         <div class="spinner" id="spinner"></div>
         <div class="message" id="message"></div>
-        <div class="version-info">Enhanced with 403 Bypass · yt-dlp 2024</div>
+        <div class="version-info">Enhanced with 403 Bypass · Quality Selection</div>
     </div>
 
     <script>
-        async function startDownload() {
+        let currentUrl = '';
+        let selectedQuality = 'best';
+
+        async function checkVideo() {
             const urlInput = document.getElementById('urlInput');
-            const btn = document.getElementById('btnDownload');
+            const btn = document.getElementById('btnCheck');
             const spinner = document.getElementById('spinner');
             const message = document.getElementById('message');
+            const qualitySelector = document.getElementById('qualitySelector');
 
             const url = urlInput.value.trim();
             if (!url) {
@@ -148,17 +222,124 @@
                 return;
             }
 
+            currentUrl = url;
             btn.disabled = true;
             spinner.style.display = 'block';
             message.style.display = 'none';
+            qualitySelector.style.display = 'none';
 
             try {
-                showMessage('🔄 Mendownload video... (Auto-retry jika error)', 'info');
+                showMessage('🔍 Mengecek kualitas yang tersedia...', 'info');
+
+                const res = await fetch('/api/formats', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url })
+                });
+
+                if (!res.ok) {
+                    const errorData = await res.json();
+                    throw new Error(errorData.error || 'Gagal mengambil informasi video');
+                }
+
+                const data = await res.json();
+                
+                if (!data.formats || data.formats.length === 0) {
+                    throw new Error('Tidak ada format video yang tersedia');
+                }
+
+                // Display quality options
+                displayQualityOptions(data.formats, data.title);
+                
+                message.style.display = 'none';
+                qualitySelector.style.display = 'block';
+
+            } catch (err) {
+                console.error(err);
+                showMessage('❌ ' + err.message, 'error');
+                qualitySelector.style.display = 'none';
+            } finally {
+                spinner.style.display = 'none';
+                btn.disabled = false;
+            }
+        }
+
+        function displayQualityOptions(formats, title) {
+            const qualityOptions = document.getElementById('qualityOptions');
+            qualityOptions.innerHTML = '';
+
+            // Add "Best Quality" option
+            const bestOption = createQualityOption('best', 'Best Quality', 'Auto');
+            qualityOptions.appendChild(bestOption);
+
+            // Add specific quality options
+            formats.forEach(format => {
+                const option = createQualityOption(
+                    format.quality,
+                    format.quality,
+                    format.filesize_mb ? `~${format.filesize_mb} MB` : 'Size unknown'
+                );
+                qualityOptions.appendChild(option);
+            });
+
+            // Select "best" by default
+            selectedQuality = 'best';
+            document.querySelector('.quality-option').classList.add('selected');
+        }
+
+        function createQualityOption(value, label, size) {
+            const div = document.createElement('div');
+            div.className = 'quality-option';
+            div.onclick = () => selectQuality(value, div);
+            div.innerHTML = `
+                <div class="quality-label">${label}</div>
+                <div class="quality-size">${size}</div>
+            `;
+            return div;
+        }
+
+        function selectQuality(quality, element) {
+            // Remove previous selection
+            document.querySelectorAll('.quality-option').forEach(opt => {
+                opt.classList.remove('selected');
+            });
+            
+            // Select new option
+            element.classList.add('selected');
+            selectedQuality = quality;
+        }
+
+        function cancelDownload() {
+            document.getElementById('qualitySelector').style.display = 'none';
+            currentUrl = '';
+            selectedQuality = 'best';
+        }
+
+        async function downloadVideo() {
+            const btn = document.querySelector('.btn-group button:last-child');
+            const spinner = document.getElementById('spinner');
+            const message = document.getElementById('message');
+            const qualitySelector = document.getElementById('qualitySelector');
+
+            if (!currentUrl) {
+                showMessage('URL tidak valid', 'error');
+                return;
+            }
+
+            btn.disabled = true;
+            spinner.style.display = 'block';
+            qualitySelector.style.display = 'none';
+
+            try {
+                showMessage(`🔄 Mendownload ${selectedQuality}... (Auto-retry jika error)`, 'info');
 
                 const res = await fetch('/api/download', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ url })
+                    body: JSON.stringify({ 
+                        url: currentUrl,
+                        quality: selectedQuality 
+                    })
                 });
 
                 const contentType = res.headers.get('content-type') || '';
@@ -172,7 +353,6 @@
                         errorMsg = await res.text();
                     }
                     
-                    // Handle 403 errors with more context
                     if (res.status === 403) {
                         errorMsg = errorMsg + '\n\nTips: Tunggu beberapa menit lalu coba lagi, atau update yt-dlp di server.';
                     }
@@ -206,7 +386,9 @@
                 URL.revokeObjectURL(downloadUrl);
 
                 showMessage('✅ Download berhasil!', 'success');
-                urlInput.value = '';
+                document.getElementById('urlInput').value = '';
+                currentUrl = '';
+                selectedQuality = 'best';
 
             } catch (err) {
                 console.error(err);
@@ -215,6 +397,11 @@
                 spinner.style.display = 'none';
                 btn.disabled = false;
             }
+        }
+
+        async function startDownload() {
+            // Legacy function - redirect to checkVideo
+            await checkVideo();
         }
 
         function showMessage(text, type) {
@@ -226,7 +413,7 @@
 
         document.getElementById('urlInput').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
-                startDownload();
+                checkVideo();
             }
         });
     </script>
