@@ -4,207 +4,208 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>YT Downloader</title>
-
     <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: 'Segoe UI', sans-serif;
-            background: #f0f2f5;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;
-            margin: 0;
+            padding: 20px;
         }
-
         .container {
-            background: #fff;
-            padding: 2rem;
-            border-radius: 14px;
-            box-shadow: 0 8px 20px rgba(0,0,0,.12);
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
             width: 100%;
             max-width: 500px;
-            text-align: center;
         }
-
         h1 {
-            color: #ff0000;
-            margin-bottom: 1.5rem;
+            color: #667eea;
+            margin-bottom: 30px;
+            text-align: center;
+            font-size: 32px;
         }
-
         .input-group {
             display: flex;
             gap: 10px;
+            margin-bottom: 20px;
         }
-
         input {
             flex: 1;
-            padding: 12px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            font-size: 15px;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border 0.3s;
+        }
+        input:focus {
             outline: none;
+            border-color: #667eea;
         }
-
         button {
-            padding: 12px 24px;
-            background: #ff0000;
-            color: #fff;
+            padding: 15px 30px;
+            background: #667eea;
+            color: white;
             border: none;
-            border-radius: 8px;
+            border-radius: 10px;
             cursor: pointer;
+            font-size: 16px;
             font-weight: 600;
-            font-size: 15px;
+            transition: all 0.3s;
         }
-
-        button:hover {
-            background: #cc0000;
+        button:hover:not(:disabled) {
+            background: #5568d3;
+            transform: translateY(-2px);
         }
-
         button:disabled {
             background: #ccc;
             cursor: not-allowed;
+            transform: none;
         }
-
-        .loader {
-            display: none;
-            margin: 20px auto;
-            border: 4px solid #eee;
-            border-top: 4px solid #ff0000;
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
             border-radius: 50%;
-            width: 32px;
-            height: 32px;
+            width: 40px;
+            height: 40px;
             animation: spin 1s linear infinite;
+            margin: 20px auto;
+            display: none;
         }
-
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
-
-        #msg {
-            margin-top: 15px;
+        .message {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
             font-size: 14px;
+            display: none;
+        }
+        .message.error {
+            background: #fee;
+            color: #c33;
+            border: 1px solid #fcc;
+        }
+        .message.success {
+            background: #efe;
+            color: #3c3;
+            border: 1px solid #cfc;
+        }
+        .message.info {
+            background: #eef;
+            color: #33c;
+            border: 1px solid #ccf;
         }
     </style>
 </head>
 <body>
+    <div class="container">
+        <h1>🎥 YT Downloader</h1>
+        
+        <div class="input-group">
+            <input type="text" id="urlInput" placeholder="Paste YouTube URL here...">
+            <button id="btnDownload" onclick="startDownload()">Download</button>
+        </div>
 
-<div class="container">
-    <h1>YT Downloader</h1>
-
-    <div class="input-group">
-        <input
-            type="text"
-            id="urlInput"
-            placeholder="Tempel link YouTube di sini..."
-        >
-        <button id="btnSubmit" onclick="downloadVideo()">Cari</button>
+        <div class="spinner" id="spinner"></div>
+        <div class="message" id="message"></div>
     </div>
 
-    <div class="loader" id="loader"></div>
-    <p id="msg"></p>
-</div>
+    <script>
+        async function startDownload() {
+            const urlInput = document.getElementById('urlInput');
+            const btn = document.getElementById('btnDownload');
+            const spinner = document.getElementById('spinner');
+            const message = document.getElementById('message');
 
-<script>
-function getFilenameFromContentDisposition(contentDisposition) {
-    if (!contentDisposition) return null;
-
-    // RFC 5987: filename*=UTF-8''...
-    const matchStar = contentDisposition.match(/filename\*=(?:UTF-8'')?([^;]+)/i);
-    if (matchStar && matchStar[1]) {
-        const value = matchStar[1].trim().replace(/^"|"$/g, '');
-        try { return decodeURIComponent(value); } catch { return value; }
-    }
-
-    const match = contentDisposition.match(/filename=([^;]+)/i);
-    if (match && match[1]) return match[1].trim().replace(/^"|"$/g, '');
-    return null;
-}
-
-async function downloadVideo() {
-    const urlInput = document.getElementById('urlInput');
-    const btn = document.getElementById('btnSubmit');
-    const loader = document.getElementById('loader');
-    const msg = document.getElementById('msg');
-
-    const url = urlInput.value.trim();
-
-    if (!url) {
-        msg.style.color = 'red';
-        msg.innerText = 'URL YouTube belum diisi';
-        return;
-    }
-
-    msg.style.color = '#333';
-    msg.innerText = 'Memproses, mohon tunggu...';
-    loader.style.display = 'block';
-    btn.disabled = true;
-
-    try {
-        const res = await fetch('api/download', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ url })
-        });
-
-        const contentType = (res.headers.get('content-type') || '').toLowerCase();
-        if (!res.ok) {
-            let errorMsg;
-            if (contentType.includes('application/json')) {
-                try {
-                    const errorData = await res.json();
-                    errorMsg = errorData.error || `HTTP ${res.status}`;
-                } catch {
-                    errorMsg = await res.text() || `HTTP ${res.status}`;
-                }
-            } else {
-                errorMsg = await res.text() || `HTTP ${res.status}`;
+            const url = urlInput.value.trim();
+            if (!url) {
+                showMessage('Masukkan URL YouTube', 'error');
+                return;
             }
-            throw new Error(errorMsg);
-        }
 
-        // If server returned an error page/text, don't save it as a video
-        if (contentType.includes('text/') || contentType.includes('application/json')) {
-            let errorMsg;
+            btn.disabled = true;
+            spinner.style.display = 'block';
+            message.style.display = 'none';
+
             try {
-                const errorData = await res.json();
-                errorMsg = errorData.error || 'Server mengembalikan respons non-video';
-            } catch {
-                const text = await res.text();
-                errorMsg = text || 'Server mengembalikan respons non-video';
+                showMessage('Sedang mendownload... mohon tunggu...', 'info');
+
+                const res = await fetch('/api/download', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url })
+                });
+
+                const contentType = res.headers.get('content-type') || '';
+                
+                if (!res.ok) {
+                    let errorMsg = 'Download gagal';
+                    if (contentType.includes('json')) {
+                        const errorData = await res.json();
+                        errorMsg = errorData.error || errorMsg;
+                    } else {
+                        errorMsg = await res.text();
+                    }
+                    throw new Error(errorMsg);
+                }
+
+                if (!contentType.includes('video') && !contentType.includes('octet-stream')) {
+                    const text = await res.text();
+                    throw new Error(text || 'Response bukan video file');
+                }
+
+                const blob = await res.blob();
+                const downloadUrl = URL.createObjectURL(blob);
+                
+                const disposition = res.headers.get('content-disposition');
+                let filename = 'video.mp4';
+                if (disposition) {
+                    const match = disposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+                    if (match && match[1]) {
+                        filename = match[1].replace(/['"]/g, '');
+                    }
+                }
+
+                const a = document.createElement('a');
+                a.href = downloadUrl;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(downloadUrl);
+
+                showMessage('✅ Download berhasil!', 'success');
+                urlInput.value = '';
+
+            } catch (err) {
+                console.error(err);
+                showMessage('❌ ' + err.message, 'error');
+            } finally {
+                spinner.style.display = 'none';
+                btn.disabled = false;
             }
-            throw new Error(errorMsg);
         }
 
-        const cd = res.headers.get('content-disposition') || '';
-        const filename = getFilenameFromContentDisposition(cd) || 'video';
+        function showMessage(text, type) {
+            const message = document.getElementById('message');
+            message.textContent = text;
+            message.className = 'message ' + type;
+            message.style.display = 'block';
+        }
 
-        const blob = await res.blob();
-        const downloadUrl = URL.createObjectURL(blob);
-
-        const a = document.createElement('a');
-        a.href = downloadUrl;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-
-        URL.revokeObjectURL(downloadUrl);
-        a.remove();
-
-        msg.style.color = 'green';
-        msg.innerText = 'Download selesai ✔';
-
-    } catch (err) {
-        msg.style.color = 'red';
-        msg.innerText = 'Error: ' + err.message;
-    } finally {
-        loader.style.display = 'none';
-        btn.disabled = false;
-    }
-}
-</script>
-
+        document.getElementById('urlInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                startDownload();
+            }
+        });
+    </script>
 </body>
 </html>
