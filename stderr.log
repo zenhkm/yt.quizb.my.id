@@ -1,0 +1,234 @@
+Deprecated Feature: Support for Python version 3.9 has been deprecated. Please update to Python 3.10 or above
+Deprecated Feature: Support for Python version 3.9 has been deprecated. Please update to Python 3.10 or above
+Sedang memproses URL: https://www.youtube.com/watch?v=Oj3vvQbdzUE
+Sedang memproses URL: https://www.youtube.com/watch?v=Oj3vvQbdzUE
+Deprecated Feature: Support for Python version 3.9 has been deprecated. Please update to Python 3.10 or above
+Sedang memproses URL: https://youtube.com/shorts/XKZjg9EKSXU?si=rQGLC2tC0qW4o0x5
+Deprecated Feature: Support for Python version 3.9 has been deprecated. Please update to Python 3.10 or above
+Deprecated Feature: Support for Python version 3.9 has been deprecated. Please update to Python 3.10 or above
+Deprecated Feature: Support for Python version 3.9 has been deprecated. Please update to Python 3.10 or above
+Deprecated Feature: Support for Python version 3.9 has been deprecated. Please update to Python 3.10 or above
+Deprecated Feature: Support for Python version 3.9 has been deprecated. Please update to Python 3.10 or above
+Deprecated Feature: Support for Python version 3.9 has been deprecated. Please update to Python 3.10 or above
+Deprecated Feature: Support for Python version 3.9 has been deprecated. Please update to Python 3.10 or above
+Deprecated Feature: Support for Python version 3.9 has been deprecated. Please update to Python 3.10 or above
+WARNING: Assuming --restrict-filenames since file system encoding cannot encode all characters. Set the LC_ALL environment variable to fix this.
+[youtube] Extracting URL: https://www.youtube.com/watch?v=Oj3vvQbdzUE
+[youtube] Oj3vvQbdzUE: Downloading webpage
+[youtube] Oj3vvQbdzUE: Downloading tv client config
+[youtube] Oj3vvQbdzUE: Downloading tv player API JSON
+[youtube] Oj3vvQbdzUE: Downloading web safari player API JSON
+[youtube] Oj3vvQbdzUE: Downloading m3u8 information
+[2025-12-23 20:33:16,415] ERROR in app: Exception on /download_proxy [GET]
+Traceback (most recent call last):
+  File "/home/quic1934/virtualenv/public_html/yt.quizb.my.id/3.9/lib/python3.9/site-packages/flask/app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/home/quic1934/virtualenv/public_html/yt.quizb.my.id/3.9/lib/python3.9/site-packages/flask/app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "/home/quic1934/virtualenv/public_html/yt.quizb.my.id/3.9/lib/python3.9/site-packages/flask_cors/extension.py", line 176, in wrapped_function
+    return cors_after_request(app.make_response(f(*args, **kwargs)))
+  File "/home/quic1934/virtualenv/public_html/yt.quizb.my.id/3.9/lib/python3.9/site-packages/flask/app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/home/quic1934/virtualenv/public_html/yt.quizb.my.id/3.9/lib/python3.9/site-packages/flask/app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+  File "/home/quic1934/public_html/yt.quizb.my.id/app.py", line 54, in download_proxy
+    req = requests.get(file_url, stream=True)
+  File "/home/quic1934/virtualenv/public_html/yt.quizb.my.id/3.9/lib/python3.9/site-packages/requests/api.py", line 73, in get
+    return request("get", url, params=params, **kwargs)
+  File "/home/quic1934/virtualenv/public_html/yt.quizb.my.id/3.9/lib/python3.9/site-packages/requests/api.py", line 59, in request
+    return session.request(method=method, url=url, **kwargs)
+  File "/home/quic1934/virtualenv/public_html/yt.quizb.my.id/3.9/lib/python3.9/site-packages/requests/sessions.py", line 575, in request
+    prep = self.prepare_request(req)
+  File "/home/quic1934/virtualenv/public_html/yt.quizb.my.id/3.9/lib/python3.9/site-packages/requests/sessions.py", line 484, in prepare_request
+    p.prepare(
+  File "/home/quic1934/virtualenv/public_html/yt.quizb.my.id/3.9/lib/python3.9/site-packages/requests/models.py", line 367, in prepare
+    self.prepare_url(url, params)
+  File "/home/quic1934/virtualenv/public_html/yt.quizb.my.id/3.9/lib/python3.9/site-packages/requests/models.py", line 438, in prepare_url
+    raise MissingSchema(
+requests.exceptions.MissingSchema: Invalid URL 'null': No scheme supplied. Perhaps you meant https://null?
+[2025-12-23 20:33:22,901] ERROR in app: Exception on /download_proxy [GET]
+Traceback (most recent call last):
+  File "/home/quic1934/virtualenv/public_html/yt.quizb.my.id/3.9/lib/python3.9/site-packages/flask/app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/home/quic1934/virtualenv/public_html/yt.quizb.my.id/3.9/lib/python3.9/site-packages/flask/app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "/home/quic1934/virtualenv/public_html/yt.quizb.my.id/3.9/lib/python3.9/site-packages/flask_cors/extension.py", line 176, in wrapped_function
+    return cors_after_request(app.make_response(f(*args, **kwargs)))
+  File "/home/quic1934/virtualenv/public_html/yt.quizb.my.id/3.9/lib/python3.9/site-packages/flask/app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/home/quic1934/virtualenv/public_html/yt.quizb.my.id/3.9/lib/python3.9/site-packages/flask/app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+  File "/home/quic1934/public_html/yt.quizb.my.id/app.py", line 54, in download_proxy
+    req = requests.get(file_url, stream=True)
+  File "/home/quic1934/virtualenv/public_html/yt.quizb.my.id/3.9/lib/python3.9/site-packages/requests/api.py", line 73, in get
+    return request("get", url, params=params, **kwargs)
+  File "/home/quic1934/virtualenv/public_html/yt.quizb.my.id/3.9/lib/python3.9/site-packages/requests/api.py", line 59, in request
+    return session.request(method=method, url=url, **kwargs)
+  File "/home/quic1934/virtualenv/public_html/yt.quizb.my.id/3.9/lib/python3.9/site-packages/requests/sessions.py", line 575, in request
+    prep = self.prepare_request(req)
+  File "/home/quic1934/virtualenv/public_html/yt.quizb.my.id/3.9/lib/python3.9/site-packages/requests/sessions.py", line 484, in prepare_request
+    p.prepare(
+  File "/home/quic1934/virtualenv/public_html/yt.quizb.my.id/3.9/lib/python3.9/site-packages/requests/models.py", line 367, in prepare
+    self.prepare_url(url, params)
+  File "/home/quic1934/virtualenv/public_html/yt.quizb.my.id/3.9/lib/python3.9/site-packages/requests/models.py", line 438, in prepare_url
+    raise MissingSchema(
+requests.exceptions.MissingSchema: Invalid URL 'null': No scheme supplied. Perhaps you meant https://null?
+[2025-12-23 20:33:23,967] ERROR in app: Exception on /download_proxy [GET]
+Traceback (most recent call last):
+  File "/home/quic1934/virtualenv/public_html/yt.quizb.my.id/3.9/lib/python3.9/site-packages/flask/app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/home/quic1934/virtualenv/public_html/yt.quizb.my.id/3.9/lib/python3.9/site-packages/flask/app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "/home/quic1934/virtualenv/public_html/yt.quizb.my.id/3.9/lib/python3.9/site-packages/flask_cors/extension.py", line 176, in wrapped_function
+    return cors_after_request(app.make_response(f(*args, **kwargs)))
+  File "/home/quic1934/virtualenv/public_html/yt.quizb.my.id/3.9/lib/python3.9/site-packages/flask/app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/home/quic1934/virtualenv/public_html/yt.quizb.my.id/3.9/lib/python3.9/site-packages/flask/app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+  File "/home/quic1934/public_html/yt.quizb.my.id/app.py", line 54, in download_proxy
+    req = requests.get(file_url, stream=True)
+  File "/home/quic1934/virtualenv/public_html/yt.quizb.my.id/3.9/lib/python3.9/site-packages/requests/api.py", line 73, in get
+    return request("get", url, params=params, **kwargs)
+  File "/home/quic1934/virtualenv/public_html/yt.quizb.my.id/3.9/lib/python3.9/site-packages/requests/api.py", line 59, in request
+    return session.request(method=method, url=url, **kwargs)
+  File "/home/quic1934/virtualenv/public_html/yt.quizb.my.id/3.9/lib/python3.9/site-packages/requests/sessions.py", line 575, in request
+    prep = self.prepare_request(req)
+  File "/home/quic1934/virtualenv/public_html/yt.quizb.my.id/3.9/lib/python3.9/site-packages/requests/sessions.py", line 484, in prepare_request
+    p.prepare(
+  File "/home/quic1934/virtualenv/public_html/yt.quizb.my.id/3.9/lib/python3.9/site-packages/requests/models.py", line 367, in prepare
+    self.prepare_url(url, params)
+  File "/home/quic1934/virtualenv/public_html/yt.quizb.my.id/3.9/lib/python3.9/site-packages/requests/models.py", line 438, in prepare_url
+    raise MissingSchema(
+requests.exceptions.MissingSchema: Invalid URL 'null': No scheme supplied. Perhaps you meant https://null?
+[2025-12-23 20:33:24,781] ERROR in app: Exception on /download_proxy [GET]
+Traceback (most recent call last):
+  File "/home/quic1934/virtualenv/public_html/yt.quizb.my.id/3.9/lib/python3.9/site-packages/flask/app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/home/quic1934/virtualenv/public_html/yt.quizb.my.id/3.9/lib/python3.9/site-packages/flask/app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "/home/quic1934/virtualenv/public_html/yt.quizb.my.id/3.9/lib/python3.9/site-packages/flask_cors/extension.py", line 176, in wrapped_function
+    return cors_after_request(app.make_response(f(*args, **kwargs)))
+  File "/home/quic1934/virtualenv/public_html/yt.quizb.my.id/3.9/lib/python3.9/site-packages/flask/app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/home/quic1934/virtualenv/public_html/yt.quizb.my.id/3.9/lib/python3.9/site-packages/flask/app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+  File "/home/quic1934/public_html/yt.quizb.my.id/app.py", line 54, in download_proxy
+    req = requests.get(file_url, stream=True)
+  File "/home/quic1934/virtualenv/public_html/yt.quizb.my.id/3.9/lib/python3.9/site-packages/requests/api.py", line 73, in get
+    return request("get", url, params=params, **kwargs)
+  File "/home/quic1934/virtualenv/public_html/yt.quizb.my.id/3.9/lib/python3.9/site-packages/requests/api.py", line 59, in request
+    return session.request(method=method, url=url, **kwargs)
+  File "/home/quic1934/virtualenv/public_html/yt.quizb.my.id/3.9/lib/python3.9/site-packages/requests/sessions.py", line 575, in request
+    prep = self.prepare_request(req)
+  File "/home/quic1934/virtualenv/public_html/yt.quizb.my.id/3.9/lib/python3.9/site-packages/requests/sessions.py", line 484, in prepare_request
+    p.prepare(
+  File "/home/quic1934/virtualenv/public_html/yt.quizb.my.id/3.9/lib/python3.9/site-packages/requests/models.py", line 367, in prepare
+    self.prepare_url(url, params)
+  File "/home/quic1934/virtualenv/public_html/yt.quizb.my.id/3.9/lib/python3.9/site-packages/requests/models.py", line 438, in prepare_url
+    raise MissingSchema(
+requests.exceptions.MissingSchema: Invalid URL 'null': No scheme supplied. Perhaps you meant https://null?
+[2025-12-23 21:38:17,625] ERROR in app: Exception on /api/info [POST]
+Traceback (most recent call last):
+  File "/home/quic1934/virtualenv/public_html/yt.quizb.my.id/3.9/lib/python3.9/site-packages/flask/app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/home/quic1934/virtualenv/public_html/yt.quizb.my.id/3.9/lib/python3.9/site-packages/flask/app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "/home/quic1934/virtualenv/public_html/yt.quizb.my.id/3.9/lib/python3.9/site-packages/flask_cors/extension.py", line 176, in wrapped_function
+    return cors_after_request(app.make_response(f(*args, **kwargs)))
+  File "/home/quic1934/virtualenv/public_html/yt.quizb.my.id/3.9/lib/python3.9/site-packages/flask/app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/home/quic1934/virtualenv/public_html/yt.quizb.my.id/3.9/lib/python3.9/site-packages/flask/app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+  File "/home/quic1934/public_html/yt.quizb.my.id/app.py", line 24, in get_video_info
+    'outtmpl': output_template,
+NameError: name 'output_template' is not defined
+[2025-12-23 21:39:13,998] ERROR in app: Exception on /api/info [POST]
+Traceback (most recent call last):
+  File "/home/quic1934/virtualenv/public_html/yt.quizb.my.id/3.9/lib/python3.9/site-packages/flask/app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/home/quic1934/virtualenv/public_html/yt.quizb.my.id/3.9/lib/python3.9/site-packages/flask/app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "/home/quic1934/virtualenv/public_html/yt.quizb.my.id/3.9/lib/python3.9/site-packages/flask_cors/extension.py", line 176, in wrapped_function
+    return cors_after_request(app.make_response(f(*args, **kwargs)))
+  File "/home/quic1934/virtualenv/public_html/yt.quizb.my.id/3.9/lib/python3.9/site-packages/flask/app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/home/quic1934/virtualenv/public_html/yt.quizb.my.id/3.9/lib/python3.9/site-packages/flask/app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+  File "/home/quic1934/public_html/yt.quizb.my.id/app.py", line 24, in get_video_info
+    'outtmpl': output_template,
+NameError: name 'output_template' is not defined
+[2025-12-23 21:39:47,671] ERROR in app: Exception on /api/info [POST]
+Traceback (most recent call last):
+  File "/home/quic1934/virtualenv/public_html/yt.quizb.my.id/3.9/lib/python3.9/site-packages/flask/app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/home/quic1934/virtualenv/public_html/yt.quizb.my.id/3.9/lib/python3.9/site-packages/flask/app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "/home/quic1934/virtualenv/public_html/yt.quizb.my.id/3.9/lib/python3.9/site-packages/flask_cors/extension.py", line 176, in wrapped_function
+    return cors_after_request(app.make_response(f(*args, **kwargs)))
+  File "/home/quic1934/virtualenv/public_html/yt.quizb.my.id/3.9/lib/python3.9/site-packages/flask/app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/home/quic1934/virtualenv/public_html/yt.quizb.my.id/3.9/lib/python3.9/site-packages/flask/app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+  File "/home/quic1934/public_html/yt.quizb.my.id/app.py", line 24, in get_video_info
+    'outtmpl': output_template,
+NameError: name 'output_template' is not defined
+[2025-12-23 21:42:55,275] ERROR in app: Exception on /api/info [POST]
+Traceback (most recent call last):
+  File "/home/quic1934/virtualenv/public_html/yt.quizb.my.id/3.9/lib/python3.9/site-packages/flask/app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/home/quic1934/virtualenv/public_html/yt.quizb.my.id/3.9/lib/python3.9/site-packages/flask/app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "/home/quic1934/virtualenv/public_html/yt.quizb.my.id/3.9/lib/python3.9/site-packages/flask_cors/extension.py", line 176, in wrapped_function
+    return cors_after_request(app.make_response(f(*args, **kwargs)))
+  File "/home/quic1934/virtualenv/public_html/yt.quizb.my.id/3.9/lib/python3.9/site-packages/flask/app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/home/quic1934/virtualenv/public_html/yt.quizb.my.id/3.9/lib/python3.9/site-packages/flask/app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+  File "/home/quic1934/public_html/yt.quizb.my.id/app.py", line 24, in get_video_info
+    'outtmpl': output_template,
+NameError: name 'output_template' is not defined
+[2025-12-23 21:43:35,977] ERROR in app: Exception on /api/info [POST]
+Traceback (most recent call last):
+  File "/home/quic1934/virtualenv/public_html/yt.quizb.my.id/3.9/lib/python3.9/site-packages/flask/app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/home/quic1934/virtualenv/public_html/yt.quizb.my.id/3.9/lib/python3.9/site-packages/flask/app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "/home/quic1934/virtualenv/public_html/yt.quizb.my.id/3.9/lib/python3.9/site-packages/flask_cors/extension.py", line 176, in wrapped_function
+    return cors_after_request(app.make_response(f(*args, **kwargs)))
+  File "/home/quic1934/virtualenv/public_html/yt.quizb.my.id/3.9/lib/python3.9/site-packages/flask/app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/home/quic1934/virtualenv/public_html/yt.quizb.my.id/3.9/lib/python3.9/site-packages/flask/app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+  File "/home/quic1934/public_html/yt.quizb.my.id/app.py", line 24, in get_video_info
+    'outtmpl': output_template,
+NameError: name 'output_template' is not defined
+[2025-12-23 21:46:05,301] ERROR in app: Exception on /api/info [POST]
+Traceback (most recent call last):
+  File "/home/quic1934/virtualenv/public_html/yt.quizb.my.id/3.9/lib/python3.9/site-packages/flask/app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/home/quic1934/virtualenv/public_html/yt.quizb.my.id/3.9/lib/python3.9/site-packages/flask/app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "/home/quic1934/virtualenv/public_html/yt.quizb.my.id/3.9/lib/python3.9/site-packages/flask_cors/extension.py", line 176, in wrapped_function
+    return cors_after_request(app.make_response(f(*args, **kwargs)))
+  File "/home/quic1934/virtualenv/public_html/yt.quizb.my.id/3.9/lib/python3.9/site-packages/flask/app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/home/quic1934/virtualenv/public_html/yt.quizb.my.id/3.9/lib/python3.9/site-packages/flask/app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+  File "/home/quic1934/public_html/yt.quizb.my.id/app.py", line 24, in get_video_info
+    'outtmpl': output_template,
+NameError: name 'output_template' is not defined
+[2025-12-23 21:46:06,335] ERROR in app: Exception on /api/info [POST]
+Traceback (most recent call last):
+  File "/home/quic1934/virtualenv/public_html/yt.quizb.my.id/3.9/lib/python3.9/site-packages/flask/app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/home/quic1934/virtualenv/public_html/yt.quizb.my.id/3.9/lib/python3.9/site-packages/flask/app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "/home/quic1934/virtualenv/public_html/yt.quizb.my.id/3.9/lib/python3.9/site-packages/flask_cors/extension.py", line 176, in wrapped_function
+    return cors_after_request(app.make_response(f(*args, **kwargs)))
+  File "/home/quic1934/virtualenv/public_html/yt.quizb.my.id/3.9/lib/python3.9/site-packages/flask/app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/home/quic1934/virtualenv/public_html/yt.quizb.my.id/3.9/lib/python3.9/site-packages/flask/app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+  File "/home/quic1934/public_html/yt.quizb.my.id/app.py", line 24, in get_video_info
+    'outtmpl': output_template,
+NameError: name 'output_template' is not defined
