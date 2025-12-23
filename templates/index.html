@@ -317,7 +317,6 @@
 
         async function downloadVideo() {
             const btn = document.querySelector('.btn-group button:last-child');
-            const spinner = document.getElementById('spinner');
             const message = document.getElementById('message');
             const qualitySelector = document.getElementById('qualitySelector');
 
@@ -327,77 +326,48 @@
             }
 
             btn.disabled = true;
-            spinner.style.display = 'block';  // Show spinner during download
-            message.style.display = 'block';
             qualitySelector.style.display = 'none';
 
             try {
-                showMessage(`🔄 Mendownload ${selectedQuality}... Mohon tunggu...`, 'info');
+                showMessage(`✅ Memulai download ${selectedQuality}...`, 'success');
 
-                const res = await fetch('/api/download', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        url: currentUrl,
-                        quality: selectedQuality 
-                    })
-                });
-
-                const contentType = res.headers.get('content-type') || '';
+                // Create form to submit download request
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '/api/download';
+                form.target = '_blank'; // Open in new tab so browser download manager handles it
                 
-                if (!res.ok) {
-                    let errorMsg = 'Download gagal';
-                    if (contentType.includes('json')) {
-                        const errorData = await res.json();
-                        errorMsg = errorData.error || errorMsg;
-                    } else {
-                        errorMsg = await res.text();
-                    }
-                    
-                    if (res.status === 403) {
-                        errorMsg = errorMsg + '\n\nTips: Tunggu beberapa menit lalu coba lagi, atau update yt-dlp di server.';
-                    }
-                    
-                    throw new Error(errorMsg);
-                }
-
-                if (!contentType.includes('video') && !contentType.includes('octet-stream')) {
-                    const text = await res.text();
-                    throw new Error(text || 'Response bukan video file');
-                }
-
-                showMessage('📥 Menyimpan file...', 'info');
-
-                const blob = await res.blob();
-                const downloadUrl = URL.createObjectURL(blob);
+                // Add URL input
+                const urlInput = document.createElement('input');
+                urlInput.type = 'hidden';
+                urlInput.name = 'url';
+                urlInput.value = currentUrl;
+                form.appendChild(urlInput);
                 
-                const disposition = res.headers.get('content-disposition');
-                let filename = 'video.mp4';
-                if (disposition) {
-                    const match = disposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
-                    if (match && match[1]) {
-                        filename = match[1].replace(/['"]/g, '');
-                    }
-                }
+                // Add quality input
+                const qualityInput = document.createElement('input');
+                qualityInput.type = 'hidden';
+                qualityInput.name = 'quality';
+                qualityInput.value = selectedQuality;
+                form.appendChild(qualityInput);
+                
+                // Submit form
+                document.body.appendChild(form);
+                form.submit();
+                document.body.removeChild(form);
 
-                const a = document.createElement('a');
-                a.href = downloadUrl;
-                a.download = filename;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(downloadUrl);
-
-                showMessage('✅ Download berhasil!', 'success');
-                document.getElementById('urlInput').value = '';
-                currentUrl = '';
-                selectedQuality = 'best';
+                // Reset UI
+                setTimeout(() => {
+                    showMessage('🎉 Download dimulai! Cek browser download manager Anda', 'success');
+                    document.getElementById('urlInput').value = '';
+                    currentUrl = '';
+                    selectedQuality = 'best';
+                }, 1000);
 
             } catch (err) {
                 console.error(err);
                 showMessage('❌ ' + err.message, 'error');
             } finally {
-                spinner.style.display = 'none';  // Hide spinner after download
                 btn.disabled = false;
             }
         }

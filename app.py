@@ -186,7 +186,12 @@ def get_video_formats():
 @app.route('/api/download', methods=['POST'])
 def api_download():
     """Download video using yt-dlp with enhanced 403 bypass."""
-    data = request.get_json(silent=True) or {}
+    # Support both JSON and form data
+    if request.is_json:
+        data = request.get_json(silent=True) or {}
+    else:
+        data = request.form.to_dict()
+    
     url = data.get('url', '').strip()
     quality = data.get('quality', 'best')  # Get quality parameter
 
