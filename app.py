@@ -78,6 +78,39 @@ def _has_usable_ffmpeg() -> Optional[str]:
 
     return shutil.which('ffmpeg')
 
+
+def _download_with_ytdlp(source_url: str, tmpdir: str, ffmpeg_path: Optional[str]) -> str:
+    outtmpl = os.path.join(tmpdir, '%(title).150s.%(ext)s')
+    dl_opts: Dict[str, Any] = {
+        'format': (
+            'best[ext=mp4][vcodec^=avc1][acodec^=mp4a][acodec!=none][vcodec!=none]'
+            '/best[ext=mp4][acodec!=none][vcodec!=none]'
+            '/best'
+        ),
+        'outtmpl': outtmpl,
+        'merge_output_format': 'mp4',
+        'noplaylist': True,
+        'quiet': True,
+        'no_warnings': True,
+        'http_headers': {
+            'User-Agent': 'Mozilla/5.0',
+        },
+    }
+    if ffmpeg_path:
+        dl_opts['ffmpeg_location'] = ffmpeg_path
+
+    with yt_dlp.YoutubeDL(dl_opts) as ydl:
+        downloaded_info = ydl.extract_info(source_url, download=True)
+        file_path = ydl.prepare_filename(downloaded_info)
+
+    if not os.path.exists(file_path):
+        base, _ = os.path.splitext(file_path)
+        mp4_path = base + '.mp4'
+        if os.path.exists(mp4_path):
+            file_path = mp4_path
+
+    return file_path
+
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -171,12 +204,44 @@ def api_download():
         if not file_url:
             return "Gagal mendapatkan URL stream", 500
 
+        # Use headers that yt-dlp expects for the chosen format (helps avoid 403)
+        format_headers = {}
+        if picked and isinstance(picked, dict):
+            format_headers = picked.get('http_headers') or {}
+        if not format_headers:
+            format_headers = info.get('http_headers') or {}
+
         headers = {
-            'User-Agent': 'Mozilla/5.0',
+            **format_headers,
+            'User-Agent': format_headers.get('User-Agent') or 'Mozilla/5.0',
+            'Referer': format_headers.get('Referer') or 'https://www.youtube.com/',
+            'Origin': format_headers.get('Origin') or 'https://www.youtube.com',
             'Accept-Encoding': 'identity',
         }
-        req = requests.get(file_url, stream=True, headers=headers, timeout=30)
-        req.raise_for_status()
+
+        try:
+            req = requests.get(file_url, stream=True, headers=headers, timeout=30)
+            req.raise_for_status()
+        except requests.HTTPError as http_err:
+            status = getattr(http_err.response, 'status_code', None)
+            if status in (401, 403):
+                # Fallback: let yt-dlp do the download (handles YouTube quirks better)
+                tmpdir = tempfile.mkdtemp(prefix='ytdlp_')
+
+                @after_this_request
+                def _cleanup(response):
+                    shutil.rmtree(tmpdir, ignore_errors=True)
+                    return response
+
+                ffmpeg_path = _has_usable_ffmpeg()
+                file_path = _download_with_ytdlp(url, tmpdir, ffmpeg_path)
+                if not os.path.exists(file_path):
+                    return f"Error: fallback download gagal (HTTP {status})", 502
+
+                download_name = os.path.basename(file_path)
+                guessed_mime = 'video/mp4' if download_name.lower().endswith('.mp4') else 'application/octet-stream'
+                return send_file(file_path, as_attachment=True, download_name=download_name, mimetype=guessed_mime)
+            raise
 
         content_type = req.headers.get('content-type') or 'application/octet-stream'
         content_length = req.headers.get('content-length')
@@ -234,40 +299,13 @@ def api_download():
                 shutil.rmtree(tmpdir, ignore_errors=True)
                 return response
 
-            outtmpl = os.path.join(tmpdir, '%(title).150s.%(ext)s')
-            dl_opts = {
-                'format': (
-                    'bestvideo[ext=mp4][vcodec^=avc1]+bestaudio[ext=m4a]'
-                    '/best[ext=mp4][vcodec^=avc1][acodec^=mp4a]'
-                    '/best'
-                ),
-                'outtmpl': outtmpl,
-                'merge_output_format': 'mp4',
-                'noplaylist': True,
-                'quiet': True,
-                'no_warnings': True,
-                'ffmpeg_location': ffmpeg_path,
-                'http_headers': {
-                    'User-Agent': 'Mozilla/5.0',
-                },
-            }
-
-            with yt_dlp.YoutubeDL(dl_opts) as ydl:
-                downloaded_info = ydl.extract_info(url, download=True)
-                file_path = ydl.prepare_filename(downloaded_info)
-
-            # If merged, prepare_filename may point to pre-merge name; prefer mp4 if present.
-            if not os.path.exists(file_path):
-                base, _ = os.path.splitext(file_path)
-                mp4_path = base + '.mp4'
-                if os.path.exists(mp4_path):
-                    file_path = mp4_path
-
+            file_path = _download_with_ytdlp(url, tmpdir, ffmpeg_path)
             if not os.path.exists(file_path):
                 return "Gagal membuat file hasil download di server", 500
 
             download_name = os.path.basename(file_path)
-            return send_file(file_path, as_attachment=True, download_name=download_name, mimetype='video/mp4')
+            guessed_mime = 'video/mp4' if download_name.lower().endswith('.mp4') else 'application/octet-stream'
+            return send_file(file_path, as_attachment=True, download_name=download_name, mimetype=guessed_mime)
 
         return Response(
             stream_with_context(generate()),
