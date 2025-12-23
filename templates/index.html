@@ -151,14 +151,31 @@ async function downloadVideo() {
 
         const contentType = (res.headers.get('content-type') || '').toLowerCase();
         if (!res.ok) {
-            const text = await res.text();
-            throw new Error(text || `HTTP ${res.status}`);
+            let errorMsg;
+            if (contentType.includes('application/json')) {
+                try {
+                    const errorData = await res.json();
+                    errorMsg = errorData.error || `HTTP ${res.status}`;
+                } catch {
+                    errorMsg = await res.text() || `HTTP ${res.status}`;
+                }
+            } else {
+                errorMsg = await res.text() || `HTTP ${res.status}`;
+            }
+            throw new Error(errorMsg);
         }
 
         // If server returned an error page/text, don't save it as a video
         if (contentType.includes('text/') || contentType.includes('application/json')) {
-            const text = await res.text();
-            throw new Error(text || 'Server mengembalikan respons non-video');
+            let errorMsg;
+            try {
+                const errorData = await res.json();
+                errorMsg = errorData.error || 'Server mengembalikan respons non-video';
+            } catch {
+                const text = await res.text();
+                errorMsg = text || 'Server mengembalikan respons non-video';
+            }
+            throw new Error(errorMsg);
         }
 
         const cd = res.headers.get('content-disposition') || '';

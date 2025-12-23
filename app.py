@@ -163,7 +163,7 @@ def api_download():
     url = data.get('url')
 
     if not url:
-        return "URL tidak boleh kosong", 400
+        return jsonify({'error': 'URL tidak boleh kosong'}), 400
 
     ydl_opts = {
         # Windows-friendly: prefer H.264 (avc1) + AAC (mp4a) in MP4 container.
@@ -195,8 +195,6 @@ def api_download():
             vcodec = (picked.get('vcodec') or '').strip()
             acodec = (picked.get('acodec') or '').strip()
             format_id = (picked.get('format_id') or '').strip()
-            # Short-circuit: let the client download directly from Google to avoid server timeout.
-            return redirect(file_url, code=302)
         else:
             file_url = info.get('url')
             ext = (info.get('ext') or 'mp4').strip('.')
@@ -205,7 +203,7 @@ def api_download():
             format_id = (info.get('format_id') or '').strip()
 
         if not file_url:
-            return "Gagal mendapatkan URL stream", 500
+            return jsonify({'error': 'Gagal mendapatkan URL stream'}), 500
 
         # Use headers that yt-dlp expects for the chosen format (helps avoid 403)
         format_headers = {}
@@ -225,11 +223,8 @@ def api_download():
         try:
             req = requests.get(file_url, stream=True, headers=headers, timeout=15)
             req.raise_for_status()
-        except requests.HTTPError as http_err:
-            status = getattr(http_err.response, 'status_code', None)
-            if status in (401, 403):
-                return f"Error: sumber menolak akses (HTTP {status}). Coba ulang atau gunakan downloader lokal.", 502
-            raise
+        except Exception as e:
+            return jsonify({'error': f'Gagal mengakses video: {str(e)}'}), 502
 
         content_type = req.headers.get('content-type') or 'application/octet-stream'
         content_length = req.headers.get('content-length')
@@ -238,16 +233,14 @@ def api_download():
         content_iter = req.iter_content(chunk_size=1024 * 256)
         first_chunk = next(content_iter, b'')
         if not first_chunk:
-            return "Upstream mengembalikan data kosong", 502
+            return jsonify({'error': 'Server video mengembalikan data kosong'}), 502
 
         sniff = first_chunk[:64].lstrip()
         if sniff.startswith(b'<!doctype') or sniff.startswith(b'<!DOCTYPE') or sniff.startswith(b'<html'):
-            return "Upstream mengembalikan HTML (bukan file video)", 502
+            return jsonify({'error': 'Server mengembalikan HTML, bukan file video'}), 502
 
         if sniff.startswith(b'#EXTM3U'):
-            # This is an HLS manifest, not a media file.
-            # HLS merge on shared hosting cenderung timeout; beri pesan jelas.
-            return "Sumber hanya menyediakan HLS (m3u8). Di hosting ini proses gabung akan timeout. Gunakan downloader lokal (yt-dlp/ffmpeg).", 502
+            return jsonify({'error': 'Video ini hanya tersedia dalam format HLS (m3u8). Gunakan downloader lokal seperti yt-dlp.'}), 502
 
         # MP4 typically contains 'ftyp' early; WebM starts with EBML header.
         if ext.lower() == 'mp4' and b'ftyp' not in first_chunk[:4096]:
@@ -283,7 +276,7 @@ def api_download():
             headers=response_headers,
         )
     except Exception as e:
-        return f"Error: {e}", 500
+        return jsonify({'error': str(e)}), 500
 
 # --- TAMBAHKAN BAGIAN INI ---
 @app.route('/download_proxy')
