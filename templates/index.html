@@ -327,11 +327,12 @@
             }
 
             btn.disabled = true;
-            spinner.style.display = 'block';
+            spinner.style.display = 'block';  // Show spinner during download
+            message.style.display = 'block';
             qualitySelector.style.display = 'none';
 
             try {
-                showMessage(`🔄 Mendownload ${selectedQuality}... (Auto-retry jika error)`, 'info');
+                showMessage(`🔄 Mendownload ${selectedQuality}... Mohon tunggu...`, 'info');
 
                 const res = await fetch('/api/download', {
                     method: 'POST',
@@ -365,6 +366,8 @@
                     throw new Error(text || 'Response bukan video file');
                 }
 
+                showMessage('📥 Menyimpan file...', 'info');
+
                 const blob = await res.blob();
                 const downloadUrl = URL.createObjectURL(blob);
                 
@@ -394,7 +397,7 @@
                 console.error(err);
                 showMessage('❌ ' + err.message, 'error');
             } finally {
-                spinner.style.display = 'none';
+                spinner.style.display = 'none';  // Hide spinner after download
                 btn.disabled = false;
             }
         }
